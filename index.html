@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>The Carnal Classroom — Feed</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  body {
+    margin: 0;
+    padding: 20px;
+    background: #0f0f0f;
+    color: #f5f5f5;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .substack-feed-embed {
+    display: grid;
+    gap: 28px;
+    max-width: 800px;
+    margin: auto;
+  }
+
+  .substack-post {
+    display: flex;
+    gap: 18px;
+    padding: 18px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    background: linear-gradient(145deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    transition: all 0.3s ease;
+  }
+
+  .substack-post:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255,255,255,0.2);
+  }
+
+  .substack-thumbnail {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  .substack-title {
+    font-family: 'Lexend', sans-serif;
+    font-size: 20px;
+    margin: 0 0 6px 0;
+    line-height: 1.3;
+  }
+
+  .substack-date {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin-bottom: 10px;
+  }
+
+  .substack-desc {
+    font-size: 14px;
+    line-height: 1.5;
+    opacity: 0.85;
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+</style>
+</head>
+<body>
+<div class="substack-feed-embed"
+     data-substack-url="https://thecarnalclassroom.substack.com"
+     data-posts="4"
+     data-show-images="true"
+     data-show-dates="true">
+</div>
+<script>
+(function () {
+  const containers = document.querySelectorAll('.substack-feed-embed');
+
+  const fmtDate = (iso) =>
+    new Intl.DateTimeFormat(undefined, {
+      year: 'numeric', month: 'short', day: '2-digit'
+    }).format(new Date(iso));
+
+  const extractFirstImg = (html) => {
+    const m = html?.match(/<img[^>]+src="([^"]+)"/i);
+    return m ? m[1] : null;
+  };
+
+  const truncate = (str, max = 160) =>
+    str && str.length > max ? str.slice(0, max) + "…" : str;
+
+  containers.forEach(async (container) => {
+    const url = container.dataset.substackUrl;
+    const count = parseInt(container.dataset.posts || "3");
+
+    const rss = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url + "/feed")}`;
+
+    container.innerHTML = "Loading…";
+
+    try {
+      const res = await fetch(rss);
+      const data = await res.json();
+
+      container.innerHTML = "";
+
+      data.items.slice(0, count).forEach(post => {
+        const el = document.createElement("a");
+        el.href = post.link;
+        el.target = "_blank";
+
+        const img = extractFirstImg(post.content);
+
+        el.innerHTML = `
+          <div class="substack-post">
+            ${img ? `<img class="substack-thumbnail" src="${img}">` : ""}
+            <div>
+              <h3 class="substack-title">${post.title}</h3>
+              <p class="substack-date">${fmtDate(post.pubDate)}</p>
+              <p class="substack-desc">${truncate(post.description)}</p>
+            </div>
+          </div>
+        `;
+
+        container.appendChild(el);
+      });
+
+    } catch {
+      container.innerHTML = "Feed unavailable.";
+    }
+  });
+})();
+</script>
+</body>
+</html>
+:::
